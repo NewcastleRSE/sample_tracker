@@ -5,3 +5,4 @@ doc/api
 doc/app
 *.swp
 *~
+.DS_Store
