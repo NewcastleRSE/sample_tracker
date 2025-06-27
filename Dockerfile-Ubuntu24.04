@@ -1,0 +1,61 @@
+# Use Ubuntu 24.04 as the base image
+FROM ubuntu:24.04
+
+ARG OLD_LIBRARY_PATH
+
+ENV TZ="Europe/London"
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Install necessary dependencies
+RUN apt-get update && apt-get install -y \
+    git-core \
+    ruby \
+    ruby-dev \
+    rdoc \
+    build-essential \
+    curl \
+    libmagickwand-dev \
+    sqlite3 libsqlite3-dev \
+    && apt-get clean
+
+RUN apt install -y vim
+
+# Needed for passenger-install-apache2-module
+RUN apt-get install -y \
+    libcurl4-openssl-dev \
+    apache2 \
+    libssl-dev \
+    apache2-dev \
+    libapr1-dev \
+    libaprutil1-dev
+
+# Copy the source code into the container
+COPY . /app
+
+###############################################################################
+# Dependent applications and libraries
+###############################################################################
+# Install ImageMagick
+RUN apt-get install libmagickwand-dev
+# Install SQLite3
+RUN apt-get install sqlite3 libsqlite3-dev
+# Install LibYAML (https://pyyaml.org/wiki/LibYAML)
+RUN git clone https://github.com/yaml/libyaml && \
+    cd libyaml && \
+    ./bootstrap && \
+    ./configure && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -fr libyaml
+
+# Install Ruby dependencies from the Gemfile
+RUN rm Gemfile.lock
+RUN gem install bundler
+RUN bundle install
+RUN gem install passenger
+
+# Default command
+#CMD ["ruby", "app.rb"]
